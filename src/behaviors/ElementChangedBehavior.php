@@ -15,9 +15,9 @@ use yii\base\Behavior;
  *
  * @since 3.6.0
  *
- * @property-read bool $hasStatusChanged
  * @property-read bool $hasChanged
- * @property-read bool $hasLiveStatus
+ * @property-read bool $hasStatusChanged
+ * @property-read bool $hasLiveOrExpiredStatus
  * @property Element $owner
  */
 class ElementChangedBehavior extends Behavior
@@ -73,15 +73,15 @@ class ElementChangedBehavior extends Behavior
     }
 
     /**
-     * Returns whether the element's fields, attributes or status have changed.
+     * Returns whether the element has changed.
      *
      * @return bool
      */
     public function getHasChanged(): bool
     {
-        // Only works with Craft 3.4.0 using delta changes feature
-        // TODO: remove in 4.0.0
-        if (version_compare(Craft::$app->getVersion(), '3.4', '<')) {
+        // If this is the canonical element then it must be newly created (not from a draft/revision).
+        // https://craftcms.stackexchange.com/a/38046/180
+        if ($this->owner->getIsCanonical()) {
             return true;
         }
 
@@ -93,7 +93,13 @@ class ElementChangedBehavior extends Behavior
             return true;
         }
 
-        return !empty($this->owner->getDirtyAttributes()) || !empty($this->owner->getDirtyFields());
+        if (!empty($this->owner->getDirtyAttributes()) || !empty($this->owner->getDirtyFields())
+            || !empty($this->owner->getModifiedAttributes()) || !empty($this->owner->getModifiedFields())
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

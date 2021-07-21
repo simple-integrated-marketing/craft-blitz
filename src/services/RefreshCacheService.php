@@ -184,11 +184,24 @@ class RefreshCacheService extends Component
      */
     public function addElement(ElementInterface $element)
     {
-        // Don't proceed if not an Element, if propagating, or if the element is an asset that is being indexed
-        if (!($element instanceof Element)
-            || $element->propagating
-            || ($element instanceof Asset && $element->getScenario() == Asset::SCENARIO_INDEX)
-        ) {
+        // Don't proceed if not an actual element
+        if (!($element instanceof Element)) {
+            return;
+        }
+
+        // Don't proceed if the element is an asset that is being indexed
+        if ($element instanceof Asset && $element->getScenario() == Asset::SCENARIO_INDEX) {
+            return;
+        }
+
+        // Don't proceed if propagating
+        if ($element->propagating) {
+            return;
+        }
+
+        // Don't proceed if element scenario is not live
+        // https://craftcms.stackexchange.com/a/38046/180
+        if ($element->scenario != Element::SCENARIO_LIVE) {
             return;
         }
 
@@ -205,11 +218,6 @@ class RefreshCacheService extends Component
 
         // Don't proceed if not a cacheable element type
         if (!ElementTypeHelper::getIsCacheableElementType($elementType)) {
-            return;
-        }
-
-        // Don't proceed if element is a draft or revision
-        if (ElementHelper::isDraftOrRevision($element)) {
             return;
         }
 
