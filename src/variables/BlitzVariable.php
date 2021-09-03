@@ -28,14 +28,15 @@ class BlitzVariable
      *
      * @param string $uri
      * @param array $params
-     *
+     * @param bool $unique
+     * @param int $priority
      * @return Markup
      */
-    public function getUri(string $uri, array $params = []): Markup
+    public function getUri(string $uri, array $params = [], bool $unique = false, int $priority = 99): Markup
     {
         $params['no-cache'] = 1;
 
-        return $this->_getScript($uri, $params);
+        return $this->_getScript($uri, $params, $unique, $priority);
     }
 
     /**
@@ -43,10 +44,11 @@ class BlitzVariable
      *
      * @param string $template
      * @param array $params
-     *
+     * @param bool $unique
+     * @param int $priority
      * @return Markup
      */
-    public function getTemplate(string $template, array $params = []): Markup
+    public function getTemplate(string $template, array $params = [], bool $unique = false, int $priority = 99): Markup
     {
         // Ensure template exists
         if (!Craft::$app->getView()->resolveTemplate($template)) {
@@ -65,7 +67,7 @@ class BlitzVariable
             'siteId' => Craft::$app->getSites()->getCurrentSite()->id,
         ];
 
-        return $this->_getScript($uri, $params);
+        return $this->_getScript($uri, $params, $unique, $priority);
     }
 
     /**
@@ -77,7 +79,7 @@ class BlitzVariable
     {
         $uri = '/'.Craft::$app->getConfig()->getGeneral()->actionTrigger.'/blitz/csrf/input';
 
-        return $this->_getScript($uri);
+        return $this->_getScript($uri, []);
     }
 
     /**
@@ -89,7 +91,7 @@ class BlitzVariable
     {
         $uri = '/'.Craft::$app->getConfig()->getGeneral()->actionTrigger.'/blitz/csrf/param';
 
-        return $this->_getScript($uri);
+        return $this->_getScript($uri, []);
     }
 
     /**
@@ -101,7 +103,7 @@ class BlitzVariable
     {
         $uri = '/'.Craft::$app->getConfig()->getGeneral()->actionTrigger.'/blitz/csrf/token';
 
-        return $this->_getScript($uri);
+        return $this->_getScript($uri, []);
     }
 
     /**
@@ -154,10 +156,11 @@ class BlitzVariable
      *
      * @param string $uri
      * @param array $params
-     *
+     * @param bool $unique
+     * @param int $priority
      * @return Markup
      */
-    private function _getScript(string $uri, array $params = []): Markup
+    private function _getScript(string $uri, array $params = [], bool $unique = false, int $priority = 99): Markup
     {
         $view = Craft::$app->getView();
         $js = '';
@@ -180,11 +183,13 @@ class BlitzVariable
             'id' => $id,
             'uri' => $uri,
             'params' => http_build_query($params),
+            'unique' => $unique,
+            'priority' => $priority,
         ];
 
-        array_walk($data, function(&$value, $key) {
+        foreach ($data as $key => &$value) {
             $value = 'data-blitz-'.$key.'="'.$value.'"';
-        });
+        }
 
         $output = '<span class="blitz-inject" id="blitz-inject-'.$id.'" '.implode(' ', $data).'></span>';
 
